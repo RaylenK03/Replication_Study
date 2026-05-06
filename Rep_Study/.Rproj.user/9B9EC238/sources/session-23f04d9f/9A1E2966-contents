@@ -7,6 +7,7 @@
 # has landscape class as well as population density thresholds
 # Density measured in people per square km
 
+#Github Link: https://github.com/RaylenK03/Replication_Study
 
 
 install.packages("tidycensus")
@@ -93,7 +94,54 @@ tx1 <- ggplot(austin_tracts) +
     ) +
     theme_minimal()
 
-ggsave("austin_metro_landscape.png")
+ggsave("austin_metro_landscape.png", 
+       plot = tx1, width = 10, height = 8, dpi = 300)
+
+#------------------------------------------------------------------------------
+
+# Median Household Income 
+income <- get_acs(
+  geography = "tract",
+  variables = "B19013_001",
+  state = "TX",
+  year = 2020,
+  survey = "acs5",
+  geometry = TRUE
+) %>%
+  st_transform(5070)
+
+# Clip to Austin MSA 
+austin_income <- income %>%
+  st_intersection(austin_msa)
+
+# Join to landscape data 
+austin_income <- austin_income %>%
+  select(GEOID, estimate, geometry) %>%
+  rename(med_income = estimate) %>%
+  left_join(
+    austin_tracts %>% st_drop_geometry(),
+    select(GEOID, Landscape),
+    by = "GEOID"
+    )
+
+# Map 2: Using the Median Household Income Variable
+  
+tx2 <- ggplot(austin_income) + 
+  geom_sf(aes(fill = med_income), color = NA) +
+  scale_fill_viridis_c(labels = dollar_format(), name = "Income") + 
+  labs (
+    title = "Median Household Income in Austin, TX", 
+    caption = "Source: ACS 2016-2020, Census Tracts"
+  ) +
+  theme_minimal()
+
+ggsave("austin_income_map.png", plot = tx2, width = 10, height = 8, dpi = 300) 
+
+#------------------------------------------------------------------------------
+
+# Graph of Income by Landscape
+
+
 
 
 
